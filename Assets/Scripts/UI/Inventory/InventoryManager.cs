@@ -154,7 +154,8 @@ public class InventoryManager : MonoBehaviour
          * be called.
          */
         
-        
+        mItemCreateButton = itemDetails.Q<Button>("ItemDetailButtonCreate");
+        mItemCreateButton.clicked += () => CreateItem();
         
         
         await UniTask.WaitForEndOfFrame();
@@ -389,9 +390,22 @@ public class InventoryManager : MonoBehaviour
         
         if (item == null)
         { // We have no item selected -> Provide some default information.
+            mItemDetailName.text = "No Item Selected";
+            mItemDetailDescription.text = "Select an item for details.";
+            mItemDetailCost.text = "Cost: -";
+            if (mItemCreateButton != null) {
+                mItemCreateButton.SetEnabled(false);
+            }
+            
         }
         else
         { // We have item selected -> Use the item information.
+            mItemDetailName.text = item.definition.readableName;
+            mItemDetailDescription.text = item.definition.readableDescription;
+            mItemDetailCost.text = $"Cost: {item.definition.cost}";
+            if (mItemCreateButton != null) {
+                mItemCreateButton.SetEnabled(availableCurrency >= item.definition.cost);
+            }
         }
         
         selectedItem = item;
@@ -425,8 +439,23 @@ public class InventoryManager : MonoBehaviour
          * These items are not cheap to make!
          */
         
-        var itemDefinition = selectedItem?.definition;
-        
-        return false;
+        if (selectedItem == null) {
+            return false;
+        }
+
+        var def = selectedItem.definition;
+        if (def == null) {
+            return false;
+        }
+
+        if (availableCurrency < def.cost) {
+            return false;
+        }
+
+        var createdItem = Instantiate(def.prefab, createDestination.transform);
+        createdItem.transform.localPosition = new Vector3(0, 4.0f, 0);
+        availableCurrency -= def.cost;
+        return true;
+
     }
 }
